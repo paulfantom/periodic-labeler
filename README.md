@@ -19,17 +19,20 @@ Action is meant to be run as periodic job. This is needed to workaround issues r
 which is a common problem when using https://github.com/actions/labeler.
 
 ```
+---
 name: Pull request labeler
 on:
   schedule:
-  - cron: '*/5 * * * *'
+    - cron: '*/5 * * * *'
 jobs:
   labeler:
-    uses: paulfantom/periodic-labeler@master
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_REPOSITORY: ${{ github.repository }}
-      LABEL_MAPPINGS_FILE: .github/labeler.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: paulfantom/periodic-labeler@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          LABEL_MAPPINGS_FILE: .github/labeler.yml
 ```
 
 By default action uses `.github/labeler.yml` located in repository from `GITHUB_REPOSITORY` as a source of pattern matchers.
