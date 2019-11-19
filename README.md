@@ -7,8 +7,6 @@ A GitHub action to automatically label all PRs according to file patterns.
 <!-- toc -->
 
 - [Usage](#usage)
-- [Contributing](#contributing)
-  * [Running the tests](#running-the-tests)
 
 <!-- tocstop -->
 
