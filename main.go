@@ -13,6 +13,33 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+func contains(slice []string, item string) bool {
+    set := make(map[string]struct{}, len(slice))
+    for _, s := range slice {
+        set[s] = struct{}{}
+    }
+
+    _, ok := set[item]
+    return ok
+}
+
+func getCurrentLabels(pr *github.PullRequest) []string {
+	var labelSet []string
+	for _, l := range pr.Labels {
+		labelSet = append(labelSet, *l.Name)
+	}
+	return labelSet
+}
+
+func containsLabels(expected []string, current []string) bool {
+	for _, e := range expected {
+		if ! contains(current, e) {
+			return false
+		}
+	}
+	return true
+}
+
 // Get files and labels matchers, output labels
 func matchFiles(labelsMatch map[string][]string, files []*github.CommitFile) []string {
 	var labelSet []string
@@ -80,6 +107,8 @@ func main() {
 			glog.Error(err)
 		}
 		expectedLabels := matchFiles(labelMatchers, files)
-		client.Issues.AddLabelsToIssue(context.Background(), owner, repo, *pull.Number, expectedLabels)
+		if ! containsLabels(expectedLabels, getCurrentLabels(pull)) {
+			client.Issues.AddLabelsToIssue(context.Background(), owner, repo, *pull.Number, expectedLabels)
+		}
 	}
 }
