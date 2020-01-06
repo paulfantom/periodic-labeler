@@ -6,7 +6,7 @@ author: Pawel Krupa (paulfantom)
 runs:
   using: 'docker'
   #image: 'Dockerfile'
-  image: 'docker://quay.io/paulfantom/periodic-labeler:latest'
+  image: 'docker://quay.io/paulfantom/periodic-labeler:v0.0.2'
 branding:
   icon: "tag"
   color: "white"
