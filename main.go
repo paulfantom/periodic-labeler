@@ -110,6 +110,7 @@ func main() {
 			}
 			expectedLabels := matchFiles(labelMatchers, files)
 			if !containsLabels(expectedLabels, getCurrentLabels(pull)) {
+				glog.Infof("PR %s/%s#%d should have following labels: %v", owner, repo, *pull.Number, expectedLabels)
 				client.Issues.AddLabelsToIssue(context.Background(), owner, repo, *pull.Number, expectedLabels)
 			}
 		}
