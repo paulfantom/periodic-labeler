@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"strings"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/golang/glog"
 	"golang.org/x/oauth2"
@@ -14,13 +14,13 @@ import (
 )
 
 func contains(slice []string, item string) bool {
-    set := make(map[string]struct{}, len(slice))
-    for _, s := range slice {
-        set[s] = struct{}{}
-    }
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
 
-    _, ok := set[item]
-    return ok
+	_, ok := set[item]
+	return ok
 }
 
 func getCurrentLabels(pr *github.PullRequest) []string {
@@ -33,7 +33,7 @@ func getCurrentLabels(pr *github.PullRequest) []string {
 
 func containsLabels(expected []string, current []string) bool {
 	for _, e := range expected {
-		if ! contains(current, e) {
+		if !contains(current, e) {
 			return false
 		}
 	}
@@ -97,18 +97,25 @@ func main() {
 	}
 
 	opt := &github.PullRequestListOptions{State: "open", Sort: "updated"}
-	pulls, _, err := client.PullRequests.List(context.Background(), owner, repo, opt)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	for _, pull := range pulls {
-		files, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, *pull.Number, nil)
+	// get all pages of results
+	for {
+		pulls, resp, err := client.PullRequests.List(context.Background(), owner, repo, opt)
 		if err != nil {
-			glog.Error(err)
+			glog.Fatal(err)
 		}
-		expectedLabels := matchFiles(labelMatchers, files)
-		if ! containsLabels(expectedLabels, getCurrentLabels(pull)) {
-			client.Issues.AddLabelsToIssue(context.Background(), owner, repo, *pull.Number, expectedLabels)
+		for _, pull := range pulls {
+			files, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, *pull.Number, nil)
+			if err != nil {
+				glog.Error(err)
+			}
+			expectedLabels := matchFiles(labelMatchers, files)
+			if !containsLabels(expectedLabels, getCurrentLabels(pull)) {
+				client.Issues.AddLabelsToIssue(context.Background(), owner, repo, *pull.Number, expectedLabels)
+			}
 		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
 	}
 }
