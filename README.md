@@ -1,4 +1,4 @@
-# Branch Cleanup Action
+# Periodic Labeler Action
 
 A GitHub action to automatically label all PRs according to file patterns.
 
