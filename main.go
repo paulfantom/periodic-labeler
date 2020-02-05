@@ -12,10 +12,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type matcher interface {
-	Match(string) bool
-}
-
 func contains(slice []string, item string) bool {
 	set := make(map[string]struct{}, len(slice))
 	for _, s := range slice {
@@ -44,7 +40,7 @@ func containsLabels(expected []string, current []string) bool {
 }
 
 // Get files and labels matchers, output labels
-func matchFiles(labelsMatch map[string][]matcher, files []*github.CommitFile) []string {
+func matchFiles(labelsMatch map[string][]glob.Glob, files []*github.CommitFile) []string {
 	var labelSet []string
 	set := make(map[string]bool)
 	for _, file := range files {
@@ -61,13 +57,13 @@ func matchFiles(labelsMatch map[string][]matcher, files []*github.CommitFile) []
 	return labelSet
 }
 
-func buildLabelMatchers(from string) (map[string][]matcher, error) {
+func buildLabelMatchers(from string) (map[string][]glob.Glob, error) {
 	var labelerConfig map[string][]string
 	if err := yaml.Unmarshal([]byte(from), &labelerConfig); err != nil {
 		return nil, err
 	}
 
-	labelMatchers := make(map[string][]matcher, len(labelerConfig))
+	labelMatchers := make(map[string][]glob.Glob, len(labelerConfig))
 
 	for labelName, patterns := range labelerConfig {
 		for _, pattern := range patterns {
