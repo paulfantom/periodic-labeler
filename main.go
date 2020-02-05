@@ -58,24 +58,24 @@ func matchFiles(labelsMatch map[string][]glob.Glob, files []*github.CommitFile) 
 }
 
 func buildLabelMatchers(from string) (map[string][]glob.Glob, error) {
-	var labelerConfig map[string][]string
-	if err := yaml.Unmarshal([]byte(from), &labelerConfig); err != nil {
+	var config map[string][]string
+	if err := yaml.Unmarshal([]byte(from), &config); err != nil {
 		return nil, err
 	}
 
-	labelMatchers := make(map[string][]glob.Glob, len(labelerConfig))
+	matchers := make(map[string][]glob.Glob, len(config))
 
-	for labelName, patterns := range labelerConfig {
-		for _, pattern := range patterns {
-			m, err := glob.Compile(pattern)
+	for label, patterns := range config {
+		for _, p := range patterns {
+			m, err := glob.Compile(p)
 			if err != nil {
 				return nil, err
 			}
-			labelMatchers[labelName] = append(labelMatchers[labelName], m)
+			matchers[label] = append(matchers[label], m)
 		}
 	}
 
-	return labelMatchers, nil
+	return matchers, nil
 }
 
 func main() {
