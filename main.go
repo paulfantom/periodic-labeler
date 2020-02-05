@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"os"
-	"path"
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/golang/glog"
-	"golang.org/x/oauth2"
-
 	"github.com/google/go-github/v28/github"
+	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 )
+
+type matcher interface {
+	Match(string) bool
+}
 
 func contains(slice []string, item string) bool {
 	set := make(map[string]struct{}, len(slice))
@@ -41,14 +44,13 @@ func containsLabels(expected []string, current []string) bool {
 }
 
 // Get files and labels matchers, output labels
-func matchFiles(labelsMatch map[string][]string, files []*github.CommitFile) []string {
+func matchFiles(labelsMatch map[string][]matcher, files []*github.CommitFile) []string {
 	var labelSet []string
 	set := make(map[string]bool)
 	for _, file := range files {
 		for label, matchers := range labelsMatch {
-			for _, pattern := range matchers {
-				match, _ := path.Match(pattern, *file.Filename)
-				if match && !set[label] {
+			for _, m := range matchers {
+				if match := m.Match(*file.Filename); match && !set[label] {
 					set[label] = true
 					labelSet = append(labelSet, label)
 					break
@@ -57,6 +59,27 @@ func matchFiles(labelsMatch map[string][]string, files []*github.CommitFile) []s
 		}
 	}
 	return labelSet
+}
+
+func buildLabelMatchers(from string) (map[string][]matcher, error) {
+	var labelerConfig map[string][]string
+	if err := yaml.Unmarshal([]byte(from), &labelerConfig); err != nil {
+		return nil, err
+	}
+
+	labelMatchers := make(map[string][]matcher, len(labelerConfig))
+
+	for labelName, patterns := range labelerConfig {
+		for _, pattern := range patterns {
+			m, err := glob.Compile(pattern)
+			if err != nil {
+				return nil, err
+			}
+			labelMatchers[labelName] = append(labelMatchers[labelName], m)
+		}
+	}
+
+	return labelMatchers, nil
 }
 
 func main() {
@@ -90,8 +113,7 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	var labelMatchers map[string][]string
-	err = yaml.Unmarshal([]byte(yamlFile), &labelMatchers)
+	labelMatchers, err := buildLabelMatchers(yamlFile)
 	if err != nil {
 		glog.Fatal(err)
 	}
