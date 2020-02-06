@@ -70,7 +70,7 @@ func buildLabelMatchers(from string) (map[string][]glob.Glob, error) {
 
 	for label, patterns := range config {
 		for _, p := range patterns {
-			m, err := glob.Compile(p)
+			m, err := glob.Compile(p, '/')
 			if err != nil {
 				return nil, err
 			}
