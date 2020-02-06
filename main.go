@@ -45,8 +45,11 @@ func matchFiles(labelsMatch map[string][]glob.Glob, files []*github.CommitFile) 
 	set := make(map[string]bool)
 	for _, file := range files {
 		for label, matchers := range labelsMatch {
+			if set[label] {
+				continue
+			}
 			for _, m := range matchers {
-				if match := m.Match(*file.Filename); match && !set[label] {
+				if m.Match(*file.Filename) {
 					set[label] = true
 					labelSet = append(labelSet, label)
 					break
