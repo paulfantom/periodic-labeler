@@ -25,7 +25,7 @@ func contains(slice []string, item string) bool {
 func getCurrentLabels(pr *github.PullRequest) []string {
 	var labelSet []string
 	for _, l := range pr.Labels {
-		labelSet = append(labelSet, *l.Name)
+		labelSet = append(labelSet, l.GetName())
 	}
 	return labelSet
 }
@@ -49,7 +49,7 @@ func matchFiles(labelsMatch map[string][]glob.Glob, files []*github.CommitFile) 
 				continue
 			}
 			for _, m := range matchers {
-				if m.Match(*file.Filename) {
+				if m.Match(file.GetFilename()) {
 					set[label] = true
 					labelSet = append(labelSet, label)
 					break
@@ -125,14 +125,14 @@ func main() {
 			glog.Fatal(err)
 		}
 		for _, pull := range pulls {
-			files, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, *pull.Number, nil)
+			files, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, pull.GetNumber(), nil)
 			if err != nil {
 				glog.Error(err)
 			}
 			expectedLabels := matchFiles(labelMatchers, files)
 			if !containsLabels(expectedLabels, getCurrentLabels(pull)) {
-				glog.Infof("PR %s/%s#%d should have following labels: %v", owner, repo, *pull.Number, expectedLabels)
-				client.Issues.AddLabelsToIssue(context.Background(), owner, repo, *pull.Number, expectedLabels)
+				glog.Infof("PR %s/%s#%d should have following labels: %v", owner, repo, pull.GetNumber(), expectedLabels)
+				client.Issues.AddLabelsToIssue(context.Background(), owner, repo, pull.GetNumber(), expectedLabels)
 			}
 		}
 		if resp.NextPage == 0 {
