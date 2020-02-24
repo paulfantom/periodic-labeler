@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 	"os"
-	"path"
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/golang/glog"
-	"golang.org/x/oauth2"
-
 	"github.com/google/go-github/v28/github"
+	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -41,14 +40,16 @@ func containsLabels(expected []string, current []string) bool {
 }
 
 // Get files and labels matchers, output labels
-func matchFiles(labelsMatch map[string][]string, files []*github.CommitFile) []string {
+func matchFiles(labelsMatch map[string][]glob.Glob, files []*github.CommitFile) []string {
 	var labelSet []string
 	set := make(map[string]bool)
 	for _, file := range files {
 		for label, matchers := range labelsMatch {
-			for _, pattern := range matchers {
-				match, _ := path.Match(pattern, *file.Filename)
-				if match && !set[label] {
+			if set[label] {
+				continue
+			}
+			for _, m := range matchers {
+				if m.Match(*file.Filename) {
 					set[label] = true
 					labelSet = append(labelSet, label)
 					break
@@ -57,6 +58,27 @@ func matchFiles(labelsMatch map[string][]string, files []*github.CommitFile) []s
 		}
 	}
 	return labelSet
+}
+
+func buildLabelMatchers(from string) (map[string][]glob.Glob, error) {
+	var config map[string][]string
+	if err := yaml.Unmarshal([]byte(from), &config); err != nil {
+		return nil, err
+	}
+
+	matchers := make(map[string][]glob.Glob, len(config))
+
+	for label, patterns := range config {
+		for _, p := range patterns {
+			m, err := glob.Compile(p, '/')
+			if err != nil {
+				return nil, err
+			}
+			matchers[label] = append(matchers[label], m)
+		}
+	}
+
+	return matchers, nil
 }
 
 func main() {
@@ -90,8 +112,7 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	var labelMatchers map[string][]string
-	err = yaml.Unmarshal([]byte(yamlFile), &labelMatchers)
+	labelMatchers, err := buildLabelMatchers(yamlFile)
 	if err != nil {
 		glog.Fatal(err)
 	}
