@@ -2,6 +2,8 @@
 
 A GitHub action to automatically label all PRs according to file patterns.
 
+📝 *Note: The `pull_request_target` event [added to GitHub Actions](https://github.blog/2020-08-03-github-actions-improvements-for-fork-and-pull-request-workflows/) makes it possible to achieve this without a scheduled workflow. See [this post](https://jclem.net/posts/labeling-prs-on-public-github-repositories) for an example.*
+
 **Table of Contents**
 
 <!-- toc -->
